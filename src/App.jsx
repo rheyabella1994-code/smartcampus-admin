@@ -1,68 +1,65 @@
 import { useState } from "react";
 import "./App.css";
 
-import {
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
-
-import { auth } from "./firebase";
-
 import AdminDashboard from "./AdminDashboard";
 import ScheduleUpload from "./ScheduleUpload";
 import GradesUpload from "./GradesUpload";
 import StudentsUpload from "./StudentsUpload";
 
 export default function App() {
-  const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [page, setPage] = useState("dashboard");
+  const [adminUser, setAdminUser] = useState(null);
 
-  const API_URL = "http://localhost:5000/api/students";
+  const API_BASE_URL = "https://smartcampus-backend-a0vc.onrender.com";
 
   const handleLogin = async () => {
+    if (!studentId.trim() || !password.trim()) {
+      alert("Please enter Admin ID and Password.");
+      return;
+    }
+
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          student_id: studentId.trim(),
+          password: password,
+        }),
+      });
 
-      const user = userCredential.user;
-
-      const response = await fetch(API_URL);
       const result = await response.json();
 
-      if (!response.ok) {
-        await signOut(auth);
-        alert(result.message || "Unable to verify admin account.");
+      if (!response.ok || !result.success) {
+        alert(result.message || "Login failed.");
         return;
       }
 
-      const userRecord = result.data.find(
-        (item) =>
-          String(item.email).toLowerCase() ===
-          String(user.email).toLowerCase()
-      );
-
-      if (!userRecord) {
-        await signOut(auth);
-        alert("Account record not found in MongoDB.");
-        return;
-      }
-
-      if (userRecord.role !== "admin") {
-        await signOut(auth);
+      if (result.data.role !== "admin") {
         alert("Access denied. Admin account only.");
         return;
       }
 
+      setAdminUser(result.data);
       setIsLoggedIn(true);
     } catch (error) {
-      alert(error.message);
+      alert("Cannot connect to server.");
+      console.log("Admin login error:", error);
     }
+  };
+
+  const handleLogout = () => {
+    setAdminUser(null);
+    setIsLoggedIn(false);
+    setPage("dashboard");
+    setStudentId("");
+    setPassword("");
   };
 
   if (isLoggedIn && page === "scheduleUpload") {
@@ -80,10 +77,11 @@ export default function App() {
   if (isLoggedIn) {
     return (
       <AdminDashboard
+        adminUser={adminUser}
         onScheduleUpload={() => setPage("scheduleUpload")}
         onGradesUpload={() => setPage("gradesUpload")}
         onStudentsUpload={() => setPage("studentsUpload")}
-        onLogout={() => setIsLoggedIn(false)}
+        onLogout={handleLogout}
       />
     );
   }
@@ -96,15 +94,13 @@ export default function App() {
         <h1>SmartCampus</h1>
         <h2>Admin</h2>
 
-        <p className="subtitle">
-          Login using administrator account
-        </p>
+        <p className="subtitle">Login using administrator account</p>
 
         <input
-          type="email"
-          placeholder="Admin Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Admin ID"
+          value={studentId}
+          onChange={(e) => setStudentId(e.target.value)}
         />
 
         <input
