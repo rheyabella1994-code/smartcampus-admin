@@ -52,7 +52,10 @@ export default function ScheduleUpload({ onBack }) {
         time: String(row.time || "").trim(),
       }));
 
-      await axios.post("http://localhost:5000/api/schedules", formattedRows);
+      await axios.post(
+  "https://smartcampus-backend-a0vc.onrender.com/api/schedules",
+  formattedRows
+);
 
       alert("Schedules uploaded successfully to MongoDB.");
       setRows([]);
