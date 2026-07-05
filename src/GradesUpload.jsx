@@ -46,7 +46,10 @@ export default function GradesUpload({ onBack }) {
         remarks: String(row.remarks || "").trim(),
       }));
 
-      await axios.post("http://localhost:5000/api/grades", formattedRows);
+      await axios.post(
+  "https://smartcampus-backend-a0vc.onrender.com/api/grades",
+  formattedRows
+);
 
       alert("Grades uploaded successfully to MongoDB.");
       setRows([]);
