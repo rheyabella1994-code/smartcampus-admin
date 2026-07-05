@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 export default function StudentsUpload({ onBack }) {
   const [rows, setRows] = useState([]);
 
-  const API_URL = "http://localhost:5000/api/students";
+ const API_URL = "https://smartcampus-backend-a0vc.onrender.com/api/students";
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
